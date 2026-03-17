@@ -1,0 +1,15 @@
+# Dependency directories
+node_modules/
+
+# Build and output directories
+build/
+dist/
+coverage/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Configuration files that might be machine-generated or shouldn't be formatted
+*.config.js 

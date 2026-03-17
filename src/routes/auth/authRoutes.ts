@@ -10,6 +10,10 @@ import {
   signupValidator,
 } from "../../middleware/expressValidatorMiddleware.js";
 import { validate } from "../../utility/validate.js";
+import {
+  rateLimitLogin,
+  rateLimitSignup,
+} from "../../middleware/rateLimitMiddleware.js";
 
 export const authRouter = express.Router();
 
@@ -50,7 +54,13 @@ export const authRouter = express.Router();
  *                   type: string
  */
 
-authRouter.post("/login", loginValidator, validate, loginController);
+authRouter.post(
+  "/login",
+  rateLimitLogin,
+  loginValidator,
+  validate,
+  loginController,
+);
 
 /**
  * @swagger
@@ -129,7 +139,13 @@ authRouter.post("/login", loginValidator, validate, loginController);
  *         '409':
  *           description: Conflict (e.g., username/email/phone number already exists)
  */
-authRouter.post("/signup", signupValidator, validate, signupController);
+authRouter.post(
+  "/signup",
+  rateLimitSignup,
+  signupValidator,
+  validate,
+  signupController,
+);
 
 /**
  * @swagger

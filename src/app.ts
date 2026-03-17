@@ -7,7 +7,6 @@ import { dirname } from "path";
 import { mainRouter } from "./routes/index-route.js";
 import { logger } from "./utility/logger.js";
 import helmet from "helmet";
-import { limiter } from "./utility/rate-limit.js";
 import { eventEmitter } from "./services/eventEmitter.js";
 import { welcomeEmailJob } from "./utility/welcomeEmailJob.js";
 import { initializeRedisCache } from "./services/redisCacheClient.js";
@@ -35,9 +34,6 @@ app.use(express.json());
 
 //  HTTP security headers
 app.use(helmet());
-
-// limiter
-app.use(limiter);
 
 /**
  * @swagger

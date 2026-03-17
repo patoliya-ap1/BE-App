@@ -12,6 +12,7 @@ const postSchema = new mongoose.Schema(
       ref: "users",
       required: [true, "userId is required"],
     },
+    thumbnail: { type: String },
   },
   { timestamps: true },
 );

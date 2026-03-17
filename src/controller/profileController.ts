@@ -6,6 +6,8 @@ import sharp from "sharp";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import cloudinary from "../utility/cloudinaryConfig.js";
+import { extractPublicId } from "cloudinary-build-url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -83,20 +85,43 @@ export const updateProfileController = async (
         return next(err);
       }
 
-      const compressedPath = path.join(
-        __dirname,
-        "..",
-        "assets",
-        "compressedImages",
-        `${isUserExist.profilePicture ? isUserExist.profilePicture.split("/").at(-1) : `profile-${Date.now()}.jpg`}`,
-      );
-      await sharp(imageFile)
-        .resize(400, 400)
-        .jpeg({ quality: 70 })
-        .toFile(compressedPath);
-      const imageNameWithExtension = path.basename(compressedPath);
-      const imgUrl = `${BACKEND_URL}/images/${imageNameWithExtension}`;
-      updateData.profilePicture = imgUrl;
+      // compress and upload image
+
+      if (!process.env.CLOUDINARY_API_SECRET) {
+        const compressedPath = path.join(
+          __dirname,
+          "..",
+          "assets",
+          "compressedImages",
+          `${isUserExist.profilePicture ? isUserExist.profilePicture.split("/").at(-1) : `profile-${Date.now()}.jpg`}`,
+        );
+        await sharp(imageFile)
+          .resize(400, 400)
+          .jpeg({ quality: 70 })
+          .toFile(compressedPath);
+        const imageNameWithExtension = path.basename(compressedPath);
+        const imgUrl = `${BACKEND_URL}/images/${imageNameWithExtension}`;
+        updateData.profilePicture = imgUrl;
+      } else {
+        const compressedBuffer = await sharp(imageFile)
+          .resize(400)
+          .jpeg({ quality: 70 })
+          .toBuffer();
+
+        if (isUserExist.profilePicture) {
+          const publicId = extractPublicId(isUserExist.profilePicture);
+          await cloudinary.uploader.destroy(publicId, { invalidate: true });
+        }
+
+        const result = await cloudinary.uploader.upload(
+          `data:image/jpeg;base64,${compressedBuffer.toString("base64")}`,
+          {
+            folder: "ProfilePicture",
+          },
+        );
+
+        updateData.profilePicture = result.url;
+      }
     }
 
     if (password && password.trim() !== "") {

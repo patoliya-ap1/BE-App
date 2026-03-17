@@ -14,6 +14,7 @@ import { initializeRedisCache } from "./services/redisCacheClient.js";
 import { scheduleUpdateLikeCount } from "./utility/scheduleUpdateLikeCount.js";
 import swaggerUi from "swagger-ui-express";
 import { specs } from "./utility/swagger.js";
+import cors from "cors";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,6 +25,8 @@ const app = express();
 
 // swagger docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
+app.use(cors({}));
 
 initializeDatabase();
 initializeRedisCache();

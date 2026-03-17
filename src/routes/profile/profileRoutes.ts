@@ -4,6 +4,7 @@ import {
   getProfileByIDController,
   updateProfileController,
 } from "../../controller/profileController.js";
+import { profileImageValidateMiddleware } from "../../middleware/profileImageValidateMiddleware.js";
 const upload = multer({ storage: multer.memoryStorage() });
 
 export const profileRouter = express.Router();
@@ -132,5 +133,6 @@ profileRouter.get("/:id", getProfileByIDController);
 profileRouter.put(
   "/:id",
   upload.single("profile-picture"),
+  profileImageValidateMiddleware,
   updateProfileController,
 );

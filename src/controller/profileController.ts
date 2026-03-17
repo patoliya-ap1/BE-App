@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import cloudinary from "../utility/cloudinaryConfig.js";
 import { extractPublicId } from "cloudinary-build-url";
+import { resizeAndCompressImageForProfile } from "../utility/resizeAndCompressImageForProfile.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -85,7 +86,7 @@ export const updateProfileController = async (
         return next(err);
       }
 
-      // compress and upload image
+      // compress and upload image local or cloudinary
 
       if (!process.env.CLOUDINARY_API_SECRET) {
         const compressedPath = path.join(
@@ -103,10 +104,9 @@ export const updateProfileController = async (
         const imgUrl = `${BACKEND_URL}/images/${imageNameWithExtension}`;
         updateData.profilePicture = imgUrl;
       } else {
-        const compressedBuffer = await sharp(imageFile)
-          .resize(400)
-          .jpeg({ quality: 70 })
-          .toBuffer();
+        // cloudinary upload
+        const compressedBuffer =
+          await resizeAndCompressImageForProfile(imageFile);
 
         if (isUserExist.profilePicture) {
           const publicId = extractPublicId(isUserExist.profilePicture);

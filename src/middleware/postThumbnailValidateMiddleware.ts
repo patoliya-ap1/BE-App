@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../utility/AppError.js";
-export const roleBaseMiddleware = (
+export const postThumbnailValidateMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction,

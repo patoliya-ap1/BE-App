@@ -11,6 +11,7 @@ import { roleBaseMiddleware } from "../../middleware/roleBaseMiddleware.js";
 import { postCacheMiddleware } from "../../middleware/postsCacheMiddleware.js";
 export const postsRouter = express.Router();
 import multer from "multer";
+import { postThumbnailValidateMiddleware } from "../../middleware/postThumbnailValidateMiddleware.js";
 const upload = multer({ storage: multer.memoryStorage() });
 
 /**
@@ -169,7 +170,12 @@ postsRouter.get("/", postCacheMiddleware, getPostsController);
  *         description: Server error
  */
 
-postsRouter.post("/", upload.single("thumbnail"), addPostsController);
+postsRouter.post(
+  "/",
+  upload.single("thumbnail"),
+  postThumbnailValidateMiddleware,
+  addPostsController,
+);
 
 /**
  * @swagger
@@ -324,7 +330,12 @@ postsRouter.post("/like/:id", likePostsController);
  *         description: Post not found
  */
 
-postsRouter.put("/:id", upload.single("thumbnail"), updatePostsController);
+postsRouter.put(
+  "/:id",
+  upload.single("thumbnail"),
+  postThumbnailValidateMiddleware,
+  updatePostsController,
+);
 
 /**
  * @swagger

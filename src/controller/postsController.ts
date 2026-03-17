@@ -1,4 +1,3 @@
-import sharp from "sharp";
 import { LikeModel } from "../models/likes.model.js";
 import { PostModel } from "../models/posts.model.js";
 import { redisCacheClient } from "../services/redisCacheClient.js";
@@ -6,6 +5,7 @@ import { AppError } from "../utility/AppError.js";
 import type { Request, Response, NextFunction } from "express";
 import cloudinary from "../utility/cloudinaryConfig.js";
 import { extractPublicId } from "cloudinary-build-url";
+import { resizeAndCompressImageForThumbnail } from "../utility/resizeAndCompressImageForThumbnail.js";
 
 export const getPostsController = async (
   req: Request,
@@ -96,42 +96,21 @@ export const addPostsController = async (
 
   try {
     if (imageFile) {
-      const filetypes = /jpeg|jpg|png|gif/;
-      const mimetype = filetypes.test(req.file?.mimetype.split("/")[1] || "");
-      const imageSize =
-        (req.file?.size && Number((req.file?.size / 1024 ** 2).toFixed(2))) ||
-        0;
+      // compress and resize image
 
-      if (!mimetype) {
-        const err = new AppError(
-          "please upload image file *jpeg , jpg , png , gif ",
-          400,
-        );
-        return next(err);
-      }
+      const compressedBuffer =
+        await resizeAndCompressImageForThumbnail(imageFile);
 
-      if (imageSize > 1) {
-        const err = new AppError(
-          "please upload image size less than 1 MB",
-          400,
-        );
-        return next(err);
-      }
+      const result = await cloudinary.uploader.upload(
+        `data:image/jpeg;base64,${compressedBuffer.toString("base64")}`,
+        {
+          folder: "PostThumbnail",
+        },
+      );
+      postData.thumbnail = result.url;
     }
 
-    const compressedBuffer = await sharp(imageFile)
-      .resize(400)
-      .jpeg({ quality: 70 })
-      .toBuffer();
-
-    const result = await cloudinary.uploader.upload(
-      `data:image/jpeg;base64,${compressedBuffer.toString("base64")}`,
-      {
-        folder: "PostThumbnail",
-      },
-    );
-
-    const newPost = new PostModel({ ...postData, thumbnail: result.url });
+    const newPost = new PostModel(postData);
     const savedPost = await newPost.save();
     if (!savedPost) {
       const err = new AppError("error while creating post", 400);
@@ -156,30 +135,6 @@ export const updatePostsController = async (
   const postUpdateData = req.body;
   const imageFile = req.file?.buffer;
   try {
-    if (imageFile) {
-      const filetypes = /jpeg|jpg|png|gif/;
-      const mimetype = filetypes.test(req.file?.mimetype.split("/")[1] || "");
-      const imageSize =
-        (req.file?.size && Number((req.file?.size / 1024 ** 2).toFixed(2))) ||
-        0;
-
-      if (!mimetype) {
-        const err = new AppError(
-          "please upload image file *jpeg , jpg , png , gif ",
-          400,
-        );
-        return next(err);
-      }
-
-      if (imageSize > 1) {
-        const err = new AppError(
-          "please upload image size less than 1 MB",
-          400,
-        );
-        return next(err);
-      }
-    }
-
     const postExist = await PostModel.findById(postId);
 
     if (!postExist) {
@@ -187,26 +142,31 @@ export const updatePostsController = async (
       return next(err);
     }
 
-    if (postExist.thumbnail) {
-      const publicId = extractPublicId(postExist.thumbnail);
-      await cloudinary.uploader.destroy(publicId, { invalidate: true });
+    // replace image if already exist
+
+    if (imageFile) {
+      // compress and resize image
+
+      const compressedBuffer =
+        await resizeAndCompressImageForThumbnail(imageFile);
+
+      const result = await cloudinary.uploader.upload(
+        `data:image/jpeg;base64,${compressedBuffer.toString("base64")}`,
+        {
+          folder: "PostThumbnail",
+        },
+      );
+      postUpdateData.thumbnail = result.url;
+
+      if (postExist.thumbnail) {
+        const publicId = extractPublicId(postExist.thumbnail);
+        await cloudinary.uploader.destroy(publicId, { invalidate: true });
+      }
     }
-
-    const compressedBuffer = await sharp(imageFile)
-      .resize(400)
-      .jpeg({ quality: 70 })
-      .toBuffer();
-
-    const result = await cloudinary.uploader.upload(
-      `data:image/jpeg;base64,${compressedBuffer.toString("base64")}`,
-      {
-        folder: "PostThumbnail",
-      },
-    );
 
     const updatedPost = await PostModel.findByIdAndUpdate(
       postId,
-      { postUpdateData, thumbnail: result.url },
+      { postUpdateData },
       { returnDocument: "after", runValidators: true },
     );
     if (!updatedPost) {

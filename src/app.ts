@@ -25,7 +25,7 @@ const app = express();
 // swagger docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
-app.use(cors({}));
+app.use(cors({ origin: "*" }));
 
 initializeDatabase();
 initializeRedisCache();

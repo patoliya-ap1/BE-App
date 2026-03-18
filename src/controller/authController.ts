@@ -12,6 +12,7 @@ import { emailQueue } from "../queue/emailQueue.js";
 import { smsQueue } from "../queue/smsQueue.js";
 import { publisher } from "../services/redisPublisher.js";
 import { generateEmailTemplate } from "../utility/generateEmailTemplate.js";
+import _ from "lodash";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -73,6 +74,9 @@ export const signupController = async (
       const err = new AppError("password is required", 400);
       return next(err);
     }
+
+    rest.username = _.toLower(rest.username);
+    rest.email = _.toLower(rest.email);
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);

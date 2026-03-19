@@ -116,6 +116,7 @@ export const addPostsController = async (
       const err = new AppError("error while creating post", 400);
       return next(err);
     }
+    redisCacheClient.flushAll();
     res.status(201).json({
       success: true,
       message: "new post created successfully.",
@@ -174,6 +175,7 @@ export const updatePostsController = async (
 
       return next(err);
     }
+    redisCacheClient.flushAll();
     res.status(201).json({
       success: true,
       message: "post updated successfully.",
@@ -196,6 +198,7 @@ export const deletePostsController = async (
       const err = new AppError("error while deleting post", 400);
       return next(err);
     }
+    redisCacheClient.flushAll();
     res.status(200).json({
       success: false,
       message: "post deleted successfully.",
